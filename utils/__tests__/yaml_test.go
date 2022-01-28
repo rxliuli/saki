@@ -1,6 +1,7 @@
 package __tests__
 
 import (
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 	"strings"
 	"testing"
@@ -23,9 +24,7 @@ func TestYamlParse(t *testing.T) {
   - '!apps/space-console'
   - '!apps/DongAoHuiDataEdit'
 `), &res)
-	if len(res.Packages) == 0 {
-		t.Error("packages is empty")
-	}
+	assert.NotEmpty(t, res.Packages)
 }
 
 func TestYamlStringify(t *testing.T) {
@@ -44,10 +43,6 @@ func TestYamlStringify(t *testing.T) {
 			"!apps/DongAoHuiDataEdit",
 		},
 	})
-	if err != nil {
-		t.Error(err)
-	}
-	if strings.Index(string(marshalStr), "packages") == -1 {
-		t.Error("packages is not in marshalStr")
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, strings.Index(string(marshalStr), "packages"), 0)
 }

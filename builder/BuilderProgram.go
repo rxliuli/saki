@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-type BuilderProgram struct {
+type Program struct {
 	Cwd   string
 	Watch bool
 }
@@ -24,12 +24,13 @@ var (
 )
 
 type PackageJson struct {
+	Name             string            `json:"name"`
 	Dependencies     map[string]string `json:"dependencies"`
 	DevDependencies  map[string]string `json:"devDependencies"`
 	PeerDependencies map[string]string `json:"peerDependencies"`
 }
 
-func (receiver BuilderProgram) getDeps() []string {
+func (receiver Program) getDeps() []string {
 	json := PackageJson{}
 	err := fsExtra.ReadJson(filepath.Join(receiver.Cwd, "package.json"), &json)
 	if err != nil {
@@ -56,7 +57,7 @@ type TsConfig struct {
 	CompilerOptions TsConfigCompilerOptions `json:"compilerOptions"`
 }
 
-func (receiver BuilderProgram) getPlatform() api.Platform {
+func (receiver Program) getPlatform() api.Platform {
 	tsconfigPath := filepath.Join(receiver.Cwd, "tsconfig.json")
 	if fsExtra.PathExists(tsconfigPath) {
 		var tsconfigJson TsConfig
@@ -100,7 +101,7 @@ func getPlugins(platform api.Platform) []api.Plugin {
 	return plugins
 }
 
-func (receiver BuilderProgram) getBaseOptions() api.BuildOptions {
+func (receiver Program) getBaseOptions() api.BuildOptions {
 	var external = globalExternal
 	if receiver.Watch {
 		external = append(external, receiver.getDeps()...)
@@ -125,7 +126,7 @@ func (receiver BuilderProgram) getBaseOptions() api.BuildOptions {
 	}
 }
 
-func (receiver BuilderProgram) getEsmOptions() api.BuildOptions {
+func (receiver Program) getEsmOptions() api.BuildOptions {
 	options := receiver.getBaseOptions()
 	options.EntryPoints = []string{filepath.Join(receiver.Cwd, "src/index.ts")}
 	options.Outfile = filepath.Join(receiver.Cwd, "dist/index.esm.js")
@@ -134,7 +135,7 @@ func (receiver BuilderProgram) getEsmOptions() api.BuildOptions {
 	return options
 }
 
-func (receiver BuilderProgram) getCjsOptions() api.BuildOptions {
+func (receiver Program) getCjsOptions() api.BuildOptions {
 	options := receiver.getBaseOptions()
 	options.EntryPoints = []string{filepath.Join(receiver.Cwd, "src/index.ts")}
 	options.Outfile = filepath.Join(receiver.Cwd, "dist/index.js")
@@ -143,7 +144,7 @@ func (receiver BuilderProgram) getCjsOptions() api.BuildOptions {
 	return options
 }
 
-func (receiver BuilderProgram) getIifeOptions() api.BuildOptions {
+func (receiver Program) getIifeOptions() api.BuildOptions {
 	options := receiver.getBaseOptions()
 	options.EntryPoints = []string{filepath.Join(receiver.Cwd, "src/index.ts")}
 	options.Outfile = filepath.Join(receiver.Cwd, "dist/index.iife.js")
@@ -151,7 +152,7 @@ func (receiver BuilderProgram) getIifeOptions() api.BuildOptions {
 	return options
 }
 
-func (receiver BuilderProgram) getCliOptions() api.BuildOptions {
+func (receiver Program) getCliOptions() api.BuildOptions {
 	options := receiver.getBaseOptions()
 	options.EntryPoints = []string{filepath.Join(receiver.Cwd, "src/bin.ts")}
 	options.Outfile = filepath.Join(receiver.Cwd, "dist/bin.js")
@@ -170,7 +171,7 @@ const (
 	cli  = "cli"
 )
 
-func (receiver BuilderProgram) GetOptionsByTarget(target string) api.BuildOptions {
+func (receiver Program) GetOptionsByTarget(target string) api.BuildOptions {
 	switch target {
 	case esm:
 		return receiver.getEsmOptions()
@@ -185,7 +186,7 @@ func (receiver BuilderProgram) GetOptionsByTarget(target string) api.BuildOption
 	}
 }
 
-func (receiver BuilderProgram) BuildToTargets(targets []string) []api.BuildResult {
+func (receiver Program) BuildToTargets(targets []string) []api.BuildResult {
 	if !receiver.Watch {
 		err := os.RemoveAll(filepath.Join(receiver.Cwd, "dist"))
 		if err != nil {
@@ -205,7 +206,7 @@ func (receiver BuilderProgram) BuildToTargets(targets []string) []api.BuildResul
 	return res
 }
 
-func (receiver BuilderProgram) BuildLib() {
+func (receiver Program) BuildLib() {
 	start := time.Now()
 	targets := receiver.BuildToTargets([]string{esm, cjs})
 	for _, target := range targets {
@@ -216,7 +217,7 @@ func (receiver BuilderProgram) BuildLib() {
 	fmt.Printf("构建完成: %s", time.Now().Sub(start).String())
 }
 
-func (receiver BuilderProgram) BuildCli() {
+func (receiver Program) BuildCli() {
 	start := time.Now()
 	targets := receiver.BuildToTargets([]string{esm, cjs, cli})
 	for _, target := range targets {

@@ -10,7 +10,7 @@ import (
 func main() {
 	cwd, _ := os.Getwd()
 
-	program := builder.BuilderProgram{
+	program := builder.Program{
 		Cwd: cwd,
 	}
 	app := &cli.App{

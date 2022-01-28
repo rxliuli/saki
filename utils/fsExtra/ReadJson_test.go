@@ -1,6 +1,7 @@
 package fsExtra
 
 import (
+	"github.com/stretchr/testify/assert"
 	"github.com/swaggest/assertjson/json5"
 	"io/fs"
 	"os"
@@ -22,9 +23,7 @@ func TestReadJson(t *testing.T) {
 		Name string `json:"name"`
 	}
 	_ = ReadJson(jsonPath, &res)
-	if res.Name != "test" {
-		t.Error("read json failed")
-	}
+	assert.Equal(t, res.Name, "test")
 }
 
 func TestReadJson5(t *testing.T) {
@@ -34,14 +33,10 @@ func TestReadJson5(t *testing.T) {
   name: "test",
 }`)
 	s, err := os.ReadFile(jsonPath)
-	if err != nil {
-		t.Error("read file failed")
-	}
+	assert.NoError(t, err)
 	var res struct {
 		Name string `json:"name"`
 	}
 	_ = json5.Unmarshal(s, &res)
-	if res.Name != "test" {
-		t.Error("read json failed")
-	}
+	assert.Equal(t, res.Name, "test")
 }

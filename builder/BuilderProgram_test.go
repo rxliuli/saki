@@ -3,14 +3,15 @@ package builder
 import (
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/rxliuli/saki/utils/fsExtra"
+	"github.com/stretchr/testify/assert"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-var builder = BuilderProgram{
-	Cwd:   filepath.Join("C:/Users/rxliuli/Code/Pkg/liuli-tools/apps/liuli-cli"),
+var builder = Program{
+	Cwd:   filepath.Join("C:/Users/rxliuli/Code/Web/liuli-tools/apps/liuli-cli"),
 	Watch: false,
 }
 
@@ -39,9 +40,7 @@ func TestGetPlatformOfNode(t *testing.T) {
 			"@types/node": "*",
 		},
 	})
-	if builder.getPlatform() != api.PlatformNode {
-		t.Error("没有正确解析 node 模块类型")
-	}
+	assert.Equal(t, builder.getPlatform(), api.PlatformNode)
 }
 
 func TestGetPlatformOfBrowser(t *testing.T) {
@@ -55,14 +54,10 @@ func TestGetPlatformOfBrowser(t *testing.T) {
     ]
   }
 }`)
-	if builder.getPlatform() != api.PlatformBrowser {
-		t.Error("没有正确解析 web 模块类型")
-	}
+	assert.Equal(t, builder.getPlatform(), api.PlatformBrowser)
 }
 
 func TestGetPlatformOfNeutral(t *testing.T) {
 	beforeEach()
-	if builder.getPlatform() != api.PlatformNeutral {
-		t.Error("没有正确解析通用模块类型")
-	}
+	assert.Equal(t, builder.getPlatform(), api.PlatformNeutral)
 }

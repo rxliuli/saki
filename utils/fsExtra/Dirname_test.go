@@ -1,12 +1,11 @@
 package fsExtra
 
 import (
+	"github.com/stretchr/testify/assert"
 	"path/filepath"
 	"testing"
 )
 
 func TestDirname(t *testing.T) {
-	if filepath.Base(Dirname()) != "fsExtra" {
-		t.Errorf("Dirname() failed")
-	}
+	assert.Equal(t, filepath.Base(Dirname()), "fsExtra")
 }
