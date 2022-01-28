@@ -1,3 +1,9 @@
 {
-  "name": "saki"
+  "name": "saki",
+  "scripts": {
+    "pub": "dotenv \"goreleaser release --rm-dist\""
+  },
+  "devDependencies": {
+    "dotenv-cli": "^4.1.1"
+  }
 }
