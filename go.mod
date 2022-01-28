@@ -1,4 +1,4 @@
-module saki
+module github.com/rxliuli/saki
 
 go 1.17
 
