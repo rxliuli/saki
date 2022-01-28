@@ -1,4 +1,4 @@
-package build
+package builder
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
@@ -72,7 +72,7 @@ func AutoExternal() api.Plugin {
 	return api.Plugin{
 		Name: "esbuild-plugin-auto-external",
 		Setup: func(build api.PluginBuild) {
-			compile, err := regexp.Compile("^\\.{1,2}\\/")
+			compile, err := regexp.Compile("^\\.{1,2}/")
 			if err != nil {
 				panic("autoExternal regexp compile error")
 			}

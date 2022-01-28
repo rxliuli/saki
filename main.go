@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/rxliuli/saki/build"
+	"github.com/rxliuli/saki/builder"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/ffmt.v1"
 	"os"
@@ -10,7 +10,7 @@ import (
 func main() {
 	cwd, _ := os.Getwd()
 
-	program := build.BuilderProgram{
+	program := builder.BuilderProgram{
 		Cwd: cwd,
 	}
 	app := &cli.App{
