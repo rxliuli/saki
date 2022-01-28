@@ -3,12 +3,12 @@ package build
 import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/rxliuli/saki/utils/fsExtra"
+	"github.com/rxliuli/saki/utils/object"
 	"github.com/swaggest/assertjson/json5"
 	"gopkg.in/ffmt.v1"
 	"os"
 	"path/filepath"
-	"saki/utils/fsExtra"
-	"saki/utils/object"
 	"strings"
 	"sync"
 	"time"
@@ -210,7 +210,7 @@ func (receiver BuilderProgram) BuildLib() {
 	targets := receiver.BuildToTargets([]string{esm, cjs})
 	for _, target := range targets {
 		if len(target.Errors) != 0 {
-			ffmt.Puts(target.Errors)
+			_, _ = ffmt.Puts(target.Errors)
 		}
 	}
 	fmt.Printf("构建完成: %s", time.Now().Sub(start).String())
@@ -221,7 +221,7 @@ func (receiver BuilderProgram) BuildCli() {
 	targets := receiver.BuildToTargets([]string{esm, cjs, cli})
 	for _, target := range targets {
 		if len(target.Errors) != 0 {
-			ffmt.Puts(target.Errors)
+			_, _ = ffmt.Puts(target.Errors)
 		}
 	}
 	fmt.Printf("构建完成: %s", time.Now().Sub(start).String())

@@ -2,10 +2,10 @@ package build
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/rxliuli/saki/utils/fsExtra"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"saki/utils/fsExtra"
 	"testing"
 )
 

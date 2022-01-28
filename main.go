@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/rxliuli/saki/build"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/ffmt.v1"
 	"os"
-	"saki/build"
 )
 
 func main() {
