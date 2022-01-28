@@ -19,3 +19,18 @@ func TestScanModules(t *testing.T) {
 	_, _ = ffmt.Puts(modules)
 	assert.NotEmpty(t, modules)
 }
+
+func TestExecTask(t *testing.T) {
+	execTasks([]Task{
+		{
+			State: TaskStateWait,
+			Module: Module{
+				Name: "",
+				Scripts: map[string]string{
+					"setup": "go build",
+				},
+				Deps: []string{},
+			},
+		},
+	}, "setup")
+}

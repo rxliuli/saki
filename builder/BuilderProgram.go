@@ -28,6 +28,7 @@ type PackageJson struct {
 	Dependencies     map[string]string `json:"dependencies"`
 	DevDependencies  map[string]string `json:"devDependencies"`
 	PeerDependencies map[string]string `json:"peerDependencies"`
+	Scripts          map[string]string `json:"scripts"`
 }
 
 func (receiver Program) getDeps() []string {

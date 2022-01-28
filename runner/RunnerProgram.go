@@ -8,6 +8,7 @@ import (
 	"github.com/rxliuli/saki/utils/object"
 	"gopkg.in/yaml.v2"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -19,9 +20,23 @@ type Program struct {
 }
 
 type Module struct {
-	Name string
-	Deps []string
-	Path string
+	Name    string
+	Deps    []string
+	Path    string
+	Scripts map[string]string
+}
+
+type TaskState int
+
+const (
+	TaskStateWait TaskState = iota
+	TaskStateSuccess
+	TaskStateFailed
+)
+
+type Task struct {
+	Module Module
+	State  TaskState
 }
 
 func (receiver Program) scanModules() []Module {
@@ -56,9 +71,10 @@ func (receiver Program) scanModules() []Module {
 		}
 		nameSet[json.Name] = true
 		res = append(res, Module{
-			Name: json.Name,
-			Path: absPath,
-			Deps: append(append(object.Keys(json.DevDependencies), object.Keys(json.Dependencies)...), object.Keys(json.PeerDependencies)...),
+			Name:    json.Name,
+			Path:    absPath,
+			Deps:    append(append(object.Keys(json.DevDependencies), object.Keys(json.Dependencies)...), object.Keys(json.PeerDependencies)...),
+			Scripts: json.Scripts,
 		})
 	}
 	for i, module := range res {
@@ -72,4 +88,48 @@ func (receiver Program) scanModules() []Module {
 		res[i] = module
 	}
 	return res
+}
+
+type Options struct {
+	Filter []string
+	Script string
+}
+
+func filterModuleByScript(modules []Module, script string) []Module {
+	var res []Module
+	for _, module := range modules {
+		if module.Scripts[script] != "" {
+			res = append(res, module)
+		}
+	}
+	return res
+}
+
+func execTasks(tasks []Task, script string) {
+	for i, task := range tasks {
+		if task.State == TaskStateWait && len(task.Module.Deps) == 0 {
+			err := exec.Command("pnpm run " + script).Run()
+			if err != nil {
+				_ = fmt.Errorf("[%s] 执行失败", task.Module.Name)
+				task.State = TaskStateFailed
+				continue
+			}
+			fmt.Printf("[%s] 执行成功", task.Module.Name)
+			task.State = TaskStateSuccess
+			tasks[i] = task
+		}
+	}
+	execTasks(tasks, script)
+}
+
+func (receiver Program) Run(options Options) {
+	modules := filterModuleByScript(receiver.scanModules(), options.Script)
+	var tasks = make([]Task, len(modules))
+	for i, module := range modules {
+		tasks[i] = Task{
+			Module: module,
+			State:  TaskStateWait,
+		}
+	}
+	execTasks(tasks, options.Script)
 }
