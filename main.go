@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"github.com/rxliuli/saki/builder"
+	"github.com/rxliuli/saki/runner"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/ffmt.v1"
+	"log"
 	"os"
 )
 
@@ -52,16 +55,38 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:  "run",
+				Usage: "运行命令",
+				Flags: []cli.Flag{
+					&cli.StringSliceFlag{
+						Name:     "filter",
+						Usage:    "模块过滤器，默认在所有模块运行",
+						Required: false,
+					},
+				},
+				Action: func(context *cli.Context) error {
+					cmd := context.Args().First()
+					if cmd == "" {
+						return errors.New("请输入运行的命令")
+					}
+					runner.Program{
+						Cwd: cwd,
+					}.Run(runner.Options{
+						Filter: []string{},
+						Script: cmd,
+					})
+					return nil
+				},
+			},
 		},
 		Name:    "saki",
 		Usage:   "基于 esbuild 实现高层次的构建工具",
 		Version: "0.1.0",
-
-		Action: func(context *cli.Context) error {
-			_, _ = ffmt.Puts("context: ", context)
-			return nil
-		},
 	}
 
-	_ = app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

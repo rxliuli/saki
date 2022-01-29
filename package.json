@@ -1,7 +1,8 @@
 {
   "name": "saki",
   "scripts": {
-    "pub": "dotenv \"goreleaser release --rm-dist\""
+    "pub": "dotenv \"goreleaser release --rm-dist\"",
+    "install-local": "go build && go install"
   },
   "devDependencies": {
     "dotenv-cli": "^4.1.1"

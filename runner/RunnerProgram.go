@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"sync"
 )
 
 type Type string
@@ -30,6 +32,7 @@ type TaskState int
 
 const (
 	TaskStateWait TaskState = iota
+	TaskStateRunning
 	TaskStateSuccess
 	TaskStateFailed
 )
@@ -37,6 +40,30 @@ const (
 type Task struct {
 	Module Module
 	State  TaskState
+}
+
+//计算模块的依赖
+func calcModulesDep(modules []Module) []Module {
+	var nameSet = make(map[string]bool)
+	for _, module := range modules {
+		nameSet[module.Name] = true
+	}
+	var result []Module
+	for _, module := range modules {
+		resDeps := make([]string, 0)
+		for _, name := range module.Deps {
+			if nameSet[name] == true {
+				resDeps = append(resDeps, name)
+			}
+		}
+		result = append(result, Module{
+			Name:    module.Name,
+			Deps:    resDeps,
+			Path:    module.Path,
+			Scripts: module.Scripts,
+		})
+	}
+	return result
 }
 
 func (receiver Program) scanModules() []Module {
@@ -57,7 +84,6 @@ func (receiver Program) scanModules() []Module {
 	})
 
 	var res []Module
-	var nameSet = make(map[string]bool)
 	for _, path := range modulePaths {
 		absPath := filepath.Join(receiver.Cwd, path)
 		var json builder.PackageJson
@@ -69,7 +95,6 @@ func (receiver Program) scanModules() []Module {
 		if err != nil {
 			panic(fmt.Sprintf("解析 json 失败 %s", absPath))
 		}
-		nameSet[json.Name] = true
 		res = append(res, Module{
 			Name:    json.Name,
 			Path:    absPath,
@@ -77,17 +102,7 @@ func (receiver Program) scanModules() []Module {
 			Scripts: json.Scripts,
 		})
 	}
-	for i, module := range res {
-		var resDeps []string
-		for _, name := range module.Deps {
-			if nameSet[name] == true {
-				resDeps = append(resDeps, name)
-			}
-		}
-		module.Deps = resDeps
-		res[i] = module
-	}
-	return res
+	return calcModulesDep(res)
 }
 
 type Options struct {
@@ -105,25 +120,61 @@ func filterModuleByScript(modules []Module, script string) []Module {
 	return res
 }
 
-func execTasks(tasks []Task, script string) {
-	for i, task := range tasks {
-		if task.State == TaskStateWait && len(task.Module.Deps) == 0 {
-			err := exec.Command("pnpm run " + script).Run()
-			if err != nil {
-				_ = fmt.Errorf("[%s] 执行失败", task.Module.Name)
-				task.State = TaskStateFailed
-				continue
+func execTask(task Task, script string) TaskState {
+	var command *exec.Cmd
+	cmd := task.Module.Scripts[script]
+	if cmd == "saki build lib" || cmd == "saki build cli" {
+		command = exec.Command("saki", strings.Split(cmd, " ")[1:]...)
+	} else {
+		command = exec.Command("pnpm", "run", script)
+	}
+	command.Dir = task.Module.Path
+	_, err := command.Output()
+	if err != nil {
+		_ = fmt.Errorf("[%s] 执行失败\n", task.Module.Name)
+		return TaskStateFailed
+	}
+	fmt.Printf("[%s] 执行成功\n", task.Module.Name)
+	return TaskStateSuccess
+}
+
+//计算模块的依赖
+func removeTaskModuleDep(tasks []Task, complete string) {
+	for i := range tasks {
+		resDeps := make([]string, 0)
+		for _, name := range tasks[0].Module.Deps {
+			if name != complete {
+				resDeps = append(resDeps, name)
 			}
-			fmt.Printf("[%s] 执行成功", task.Module.Name)
-			task.State = TaskStateSuccess
-			tasks[i] = task
 		}
+		tasks[i].Module.Deps = resDeps
+	}
+}
+
+func execTasks(tasks []Task, script string) {
+	flag := true
+	wg := sync.WaitGroup{}
+	for i := range tasks {
+		if tasks[i].State == TaskStateWait && len(tasks[i].Module.Deps) == 0 {
+			tasks[i].State = TaskStateRunning
+			flag = false
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				tasks[i].State = execTask(tasks[i], script)
+				removeTaskModuleDep(tasks, tasks[i].Module.Name)
+			}(i)
+		}
+	}
+	wg.Wait()
+	if flag {
+		return
 	}
 	execTasks(tasks, script)
 }
 
 func (receiver Program) Run(options Options) {
-	modules := filterModuleByScript(receiver.scanModules(), options.Script)
+	modules := calcModulesDep(filterModuleByScript(receiver.scanModules(), options.Script))
 	var tasks = make([]Task, len(modules))
 	for i, module := range modules {
 		tasks[i] = Task{
