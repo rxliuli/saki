@@ -97,7 +97,7 @@ func getPlugins(platform api.Platform) []api.Plugin {
 	if platform == api.PlatformBrowser {
 	}
 	if platform == api.PlatformNode {
-		plugins = append(plugins, NodeExternals(), NativeNodeModules())
+		plugins = append(plugins, NodeExternals())
 	}
 	return plugins
 }
