@@ -2,17 +2,14 @@ package __tests__
 
 import (
 	"fmt"
-	"github.com/rxliuli/saki/utils/fsExtra"
+	"github.com/rxliuli/saki/tests"
 	"github.com/stretchr/testify/assert"
 	"os/exec"
-	"path/filepath"
 	"testing"
 )
 
 func init() {
-	rootDir = fsExtra.FindParentDir(fsExtra.Dirname(), func(dir string) bool {
-		return fsExtra.PathExists(filepath.Join(dir, "go.mod"))
-	})
+	rootDir = tests.GetRootPath()
 }
 
 func TestExecCmd(t *testing.T) {

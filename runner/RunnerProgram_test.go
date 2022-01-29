@@ -21,6 +21,13 @@ func TestScanModules(t *testing.T) {
 	assert.NotEmpty(t, modules)
 }
 
+func TestFilterModuleByFilter(t *testing.T) {
+	modules := program.scanModules()
+	modules = program.filterModuleByFilter(modules, []string{"libs/*"})
+	_, _ = ffmt.Puts(modules)
+	assert.NotEmpty(t, modules)
+}
+
 func TestCalcModulesDep(t *testing.T) {
 	res := calcModulesDep([]Module{
 		{Name: "a", Deps: []string{"b"}},
@@ -109,7 +116,19 @@ func TestExecTasks(t *testing.T) {
 
 func TestProgram_Run(t *testing.T) {
 	program.Run(Options{
-		Filter: []string{"./libs/*"},
+		Filter: []string{"libs/*"},
 		Script: "setup",
+	})
+}
+
+func TestProgram_RunByMatrix(t *testing.T) {
+	program.Cwd = "C:/Users/rxliuli/Code/company/matrix"
+	//res := program.scanModules([]string{})
+	//fmt.Println(len(res))
+	//_, _ = ffmt.Pjson(res)
+
+	program.Run(Options{
+		Filter: []string{},
+		Script: "initialize",
 	})
 }

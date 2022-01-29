@@ -61,7 +61,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringSliceFlag{
 						Name:     "filter",
-						Usage:    "模块过滤器，默认在所有模块运行",
+						Usage:    "模块过滤器路径列表，可使用 glob 模式",
 						Required: false,
 					},
 				},
@@ -73,7 +73,7 @@ func main() {
 					runner.Program{
 						Cwd: cwd,
 					}.Run(runner.Options{
-						Filter: []string{},
+						Filter: context.StringSlice("filter"),
 						Script: cmd,
 					})
 					return nil

@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 	"github.com/rxliuli/saki/builder"
+	"github.com/rxliuli/saki/utils/array"
 	"github.com/rxliuli/saki/utils/fsExtra"
 	"github.com/rxliuli/saki/utils/globby"
 	"github.com/rxliuli/saki/utils/object"
@@ -22,10 +23,10 @@ type Program struct {
 }
 
 type Module struct {
-	Name    string
-	Deps    []string
-	Path    string
-	Scripts map[string]string
+	Name    string            // 模块名称
+	Deps    []string          // 依赖
+	Path    string            // 模块绝对路径
+	Scripts map[string]string // 脚本
 }
 
 type TaskState int
@@ -78,9 +79,18 @@ func (receiver Program) scanModules() []Module {
 	if err != nil {
 		panic("解析 yaml 文件失败")
 	}
-	modulePaths := globby.Glob(modules.Packages, globby.Options{
+
+	patterns := array.StringFilter(modules.Packages, func(s string) bool {
+		return !strings.HasPrefix(s, "!")
+	})
+	ignores := append(array.StringMap(array.StringFilter(modules.Packages, func(s string) bool {
+		return strings.HasPrefix(s, "!")
+	}), func(str string) string {
+		return strings.TrimPrefix(str, "!")
+	}), []string{"node_modules", "**/node_modules", ".git", ".github", ".idea", ".*"}...)
+	modulePaths := globby.Glob(patterns, globby.Options{
 		Cwd:    receiver.Cwd,
-		Ignore: []string{},
+		Ignore: ignores,
 	})
 
 	var res []Module
@@ -173,8 +183,28 @@ func execTasks(tasks []Task, script string) {
 	execTasks(tasks, script)
 }
 
+func (receiver Program) filterModuleByFilter(modules []Module, filters []string) []Module {
+	if filters == nil || len(filters) == 0 {
+		return modules
+	}
+	filterGlobs := globby.Patterns2Globs(array.StringMap(filters, func(str string) string {
+		if filepath.IsAbs(str) {
+			return str
+		}
+		return strings.ReplaceAll(filepath.Join(receiver.Cwd, str), "\\", "/")
+	}))
+	var res = make([]Module, 0)
+	for _, module := range modules {
+		if globby.MiniMatch(filterGlobs, strings.ReplaceAll(module.Path, "\\", "/")) || globby.MiniMatch(filterGlobs, module.Name) {
+			res = append(res, module)
+			continue
+		}
+	}
+	return res
+}
+
 func (receiver Program) Run(options Options) {
-	modules := calcModulesDep(filterModuleByScript(receiver.scanModules(), options.Script))
+	modules := calcModulesDep(receiver.filterModuleByFilter(filterModuleByScript(receiver.scanModules(), options.Script), options.Filter))
 	var tasks = make([]Task, len(modules))
 	for i, module := range modules {
 		tasks[i] = Task{
