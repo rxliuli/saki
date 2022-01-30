@@ -3,7 +3,7 @@ const json = require('./package.json')
 const { downloadRelease } = require('@terascope/fetch-github-release')
 const path = require('path')
 const { extract } = require('tar')
-const { copy, remove, pathExists } = require('fs-extra')
+const { copy, remove, writeJson } = require('fs-extra')
 
 const archMap = {
   arm64: 'arm64',
@@ -21,18 +21,20 @@ async function main() {
   const tempPath = path.resolve(__dirname, '.temp')
   const ext = platform === 'windows' ? '.exe' : ''
   const binPath = path.resolve(__dirname, 'bin' + ext)
-  if (await pathExists(binPath)) {
-    console.log('已下载')
-    return
-  }
-  const assetName = `saki_${json.version}_${platform}_${archMap[arch]}.tar.gz`
+  // if (await pathExists(binPath)) {
+  //   console.log('已下载')
+  //   return
+  // }
+  const version = json.version
+  // const version = '0.2.5'
+  const assetName = `saki_${version}_${platform}_${archMap[arch]}.tar.gz`
   try {
     await downloadRelease(
       'rxliuli',
       'saki',
       tempPath,
       (release) => {
-        return release.tag_name === `v${json.version}`
+        return release.tag_name === `v${version}`
       },
       (asset) => {
         return asset.name === assetName
@@ -50,6 +52,8 @@ async function main() {
 
   await copy(path.resolve(tempPath, 'saki' + ext), binPath)
   await remove(path.resolve(__dirname, 'bin'))
+  json.bin.saki = 'bin' + ext
+  await writeJson(path.resolve(__dirname, 'package.json'), json)
 }
 
 main()
