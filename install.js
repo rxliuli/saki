@@ -3,10 +3,16 @@ const json = require('./package.json')
 const { downloadRelease } = require('@terascope/fetch-github-release')
 const path = require('path')
 const { extract } = require('tar')
-const { copy, remove } = require('fs-extra')
+const { copy, remove, pathExists } = require('fs-extra')
 
 async function main() {
-  console.log('hello')
+  const tempPath = path.resolve(__dirname, '.temp')
+  const ext = platform === 'windows' ? '.exe' : ''
+  const binPath = path.resolve(__dirname, 'bin' + ext)
+  if (await pathExists(binPath)) {
+    console.log('已下载')
+    return
+  }
   const archMap = {
     arm64: 'arm64',
     x64: 'amd64',
@@ -19,7 +25,6 @@ async function main() {
   const platform = platformMap[os.platform()]
   const arch = os.arch()
   const assetName = `saki_${json.version}_${platform}_${archMap[arch]}.tar.gz`
-  const tempPath = path.resolve(__dirname, '.temp')
   try {
     await downloadRelease(
       'rxliuli',
@@ -41,12 +46,9 @@ async function main() {
     file: path.resolve(tempPath, assetName),
     cwd: tempPath,
   })
-  const ext = platform === 'windows' ? '.exe' : ''
-  await copy(
-    path.resolve(tempPath, 'saki' + ext),
-    path.resolve(__dirname, 'bin' + ext),
-  )
-  remove(path.resolve(__dirname, 'bin' + ext))
+
+  await copy(path.resolve(tempPath, 'saki' + ext), binPath)
+  await remove(path.resolve(__dirname, 'bin'))
 }
 
 main()
