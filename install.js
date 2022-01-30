@@ -3,7 +3,7 @@ const json = require('./package.json')
 const { downloadRelease } = require('@terascope/fetch-github-release')
 const path = require('path')
 const { extract } = require('tar')
-const { copy } = require('fs-extra')
+const { copy, remove } = require('fs-extra')
 
 async function main() {
   console.log('hello')
@@ -41,10 +41,12 @@ async function main() {
     file: path.resolve(tempPath, assetName),
     cwd: tempPath,
   })
+  const ext = platform === 'windows' ? '.exe' : ''
   await copy(
-    path.resolve(tempPath, 'saki' + (platform === 'windows' ? '.exe' : '')),
-    path.resolve(__dirname, 'bin'),
+    path.resolve(tempPath, 'saki' + ext),
+    path.resolve(__dirname, 'bin' + ext),
   )
+  remove(path.resolve(__dirname, 'bin' + ext))
 }
 
 main()
