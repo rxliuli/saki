@@ -6,7 +6,6 @@ import (
 	"github.com/rxliuli/saki/runner"
 	"github.com/rxliuli/saki/utils/array"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/ffmt.v1"
 	"log"
 	"os"
 	"strings"
@@ -51,7 +50,9 @@ func main() {
 							},
 						},
 						Action: func(context *cli.Context) error {
-							_, _ = ffmt.Puts("context: ", context.StringSlice("target"))
+							program.BuildToTargets(array.StringFlatMap(context.StringSlice("target"), func(s string) []string {
+								return strings.Split(s, ",")
+							}))
 							return nil
 						},
 					},
