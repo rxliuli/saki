@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+	"encoding/json"
 	"errors"
 	"github.com/rxliuli/saki/builder"
 	"github.com/rxliuli/saki/runner"
@@ -11,7 +13,22 @@ import (
 	"strings"
 )
 
+//go:embed package.json
+var packageJson embed.FS
+
+type PackageJson struct {
+	Version string `json:"version"`
+}
+
+func readVersion() string {
+	file, _ := packageJson.ReadFile("package.json")
+	var pkgJson PackageJson
+	_ = json.Unmarshal(file, &pkgJson)
+	return pkgJson.Version
+}
+
 func main() {
+	version := readVersion()
 	cwd, _ := os.Getwd()
 
 	program := builder.Program{
@@ -97,7 +114,7 @@ func main() {
 		},
 		Name:    "saki",
 		Usage:   "基于 esbuild 实现高层次的构建工具",
-		Version: "0.1.0",
+		Version: version,
 	}
 
 	err := app.Run(os.Args)
