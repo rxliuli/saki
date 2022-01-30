@@ -1,6 +1,6 @@
 {
   "name": "@liuli-util/saki",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "scripts": {
     "pub": "dotenv \"goreleaser release --rm-dist --skip-validate\"",
     "install-local": "go build && go install",
