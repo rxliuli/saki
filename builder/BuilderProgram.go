@@ -6,7 +6,6 @@ import (
 	"github.com/rxliuli/saki/utils/fsExtra"
 	"github.com/rxliuli/saki/utils/object"
 	"github.com/swaggest/assertjson/json5"
-	"gopkg.in/ffmt.v1"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,12 +91,15 @@ func (receiver Program) getPlatform() api.Platform {
 	return api.PlatformNeutral
 }
 
-func getPlugins(platform api.Platform) []api.Plugin {
+func (receiver Program) getPlugins(platform api.Platform) []api.Plugin {
 	var plugins []api.Plugin
 	if platform == api.PlatformBrowser {
 	}
 	if platform == api.PlatformNode {
 		plugins = append(plugins, NodeExternals())
+	}
+	if receiver.Watch {
+		plugins = append(plugins, Logger(receiver.Cwd))
 	}
 	return plugins
 }
@@ -111,19 +113,20 @@ func (receiver Program) getBaseOptions() api.BuildOptions {
 	if receiver.Watch {
 		watch = api.WatchMode{}
 	}
+	platform := receiver.getPlatform()
 	return api.BuildOptions{
 		Sourcemap:         api.SourceMapExternal,
 		Bundle:            true,
 		Watch:             &watch,
 		External:          globalExternal,
-		Platform:          receiver.getPlatform(),
+		Platform:          platform,
 		MinifyWhitespace:  !receiver.Watch,
 		MinifyIdentifiers: !receiver.Watch,
 		MinifySyntax:      !receiver.Watch,
 		Incremental:       receiver.Watch,
 		Metafile:          receiver.Watch,
 		Write:             true,
-		Plugins:           getPlugins(receiver.getPlatform()),
+		Plugins:           receiver.getPlugins(platform),
 	}
 }
 
@@ -165,29 +168,43 @@ func (receiver Program) getCliOptions() api.BuildOptions {
 	return options
 }
 
+type Target = string
+
 const (
-	esm  = "esm"
-	cjs  = "cjs"
-	iife = "iife"
-	cli  = "cli"
+	TargetEsm  Target = "esm"
+	TargetCjs  Target = "cjs"
+	TargetIife Target = "iife"
+	TargetCli  Target = "cli"
 )
 
-func (receiver Program) GetOptionsByTarget(target string) api.BuildOptions {
+func (receiver Program) GetOptionsByTarget(target Target) api.BuildOptions {
 	switch target {
-	case esm:
+	case TargetEsm:
 		return receiver.getEsmOptions()
-	case cjs:
+	case TargetCjs:
 		return receiver.getCjsOptions()
-	case iife:
+	case TargetIife:
 		return receiver.getIifeOptions()
-	case cli:
+	case TargetCli:
 		return receiver.getCliOptions()
 	default:
 		panic("无法识别的目标")
 	}
 }
 
-func (receiver Program) BuildToTargets(targets []string) []api.BuildResult {
+func resolveResultError(results []api.BuildResult) error {
+	for _, result := range results {
+		if len(result.Errors) != 0 {
+			message := result.Errors[0]
+			location := message.Location
+			return fmt.Errorf("构建失败: %s %s:%d:%d\n", message.Text, location.File, location.Line, location.Column)
+		}
+	}
+	return nil
+}
+
+func (receiver Program) BuildToTargets(targets []Target) error {
+	start := time.Now()
 	if !receiver.Watch {
 		err := os.RemoveAll(filepath.Join(receiver.Cwd, "dist"))
 		if err != nil {
@@ -204,27 +221,10 @@ func (receiver Program) BuildToTargets(targets []string) []api.BuildResult {
 		}(i, target)
 	}
 	wg.Wait()
-	return res
-}
-
-func (receiver Program) BuildLib() {
-	start := time.Now()
-	targets := receiver.BuildToTargets([]string{esm, cjs})
-	for _, target := range targets {
-		if len(target.Errors) != 0 {
-			_, _ = ffmt.Puts(target.Errors)
-		}
+	if receiver.Watch {
+		<-make(chan bool)
+	} else {
+		fmt.Printf("构建完成: %s\n", time.Now().Sub(start).String())
 	}
-	fmt.Printf("构建完成: %s", time.Now().Sub(start).String())
-}
-
-func (receiver Program) BuildCli() {
-	start := time.Now()
-	targets := receiver.BuildToTargets([]string{esm, cjs, cli})
-	for _, target := range targets {
-		if len(target.Errors) != 0 {
-			_, _ = ffmt.Puts(target.Errors)
-		}
-	}
-	fmt.Printf("构建完成: %s", time.Now().Sub(start).String())
+	return resolveResultError(res)
 }

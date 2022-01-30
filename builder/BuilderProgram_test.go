@@ -24,11 +24,11 @@ func beforeEach() {
 }
 
 func TestBuilderProgram_BuildLib(t *testing.T) {
-	builder.BuildLib()
+	assert.NoError(t, builder.BuildToTargets([]Target{TargetEsm, TargetCjs}))
 }
 
 func TestBuilderProgram_BuildCli(t *testing.T) {
-	builder.BuildCli()
+	assert.NoError(t, builder.BuildToTargets([]Target{TargetCli, TargetEsm, TargetCjs}))
 }
 
 func TestGetPlatformOfNode(t *testing.T) {
@@ -60,4 +60,17 @@ func TestGetPlatformOfBrowser(t *testing.T) {
 func TestGetPlatformOfNeutral(t *testing.T) {
 	beforeEach()
 	assert.Equal(t, builder.getPlatform(), api.PlatformNeutral)
+}
+
+func TestProgram_BuildLibWatch(t *testing.T) {
+	beforeEach()
+	assert.NoError(t, os.MkdirAll(filepath.Join(tempPath, "src"), fs.ModeDir))
+	assert.NoError(t, fsExtra.WriteStringFile(filepath.Join(tempPath, "package.json"), `{}`))
+	assert.NoError(t, fsExtra.WriteStringFile(filepath.Join(tempPath, "src/index.ts"), `export function hello(name: string) {
+  return 'hello ' + name;
+}`))
+	builder.Watch = true
+	builder.Cwd = tempPath
+	assert.NoError(t, builder.BuildToTargets([]Target{TargetEsm, TargetCjs}))
+	<-make(chan bool)
 }

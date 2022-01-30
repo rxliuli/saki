@@ -22,21 +22,29 @@ func main() {
 			{
 				Name:  "build",
 				Usage: "构建命令",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "watch",
+						Usage:   "监听文件变化，自动编译",
+						Value:   false,
+						Aliases: []string{"w"},
+					},
+				},
 				Subcommands: cli.Commands{
 					{
 						Name:  "lib",
 						Usage: "构建 lib",
 						Action: func(context *cli.Context) error {
-							program.BuildLib()
-							return nil
+							program.Watch = context.Bool("watch")
+							return program.BuildToTargets([]builder.Target{builder.TargetEsm, builder.TargetCjs})
 						},
 					},
 					{
 						Name:  "cli",
 						Usage: "构建 cli",
 						Action: func(context *cli.Context) error {
-							program.BuildCli()
-							return nil
+							program.Watch = context.Bool("watch")
+							return program.BuildToTargets([]builder.Target{builder.TargetCli, builder.TargetEsm, builder.TargetCjs})
 						},
 					},
 					{
@@ -50,10 +58,10 @@ func main() {
 							},
 						},
 						Action: func(context *cli.Context) error {
-							program.BuildToTargets(array.StringFlatMap(context.StringSlice("target"), func(s string) []string {
+							program.Watch = context.Bool("watch")
+							return program.BuildToTargets(array.StringFlatMap(context.StringSlice("target"), func(s string) []string {
 								return strings.Split(s, ",")
 							}))
-							return nil
 						},
 					},
 				},
