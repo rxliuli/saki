@@ -152,7 +152,7 @@ func execTask(task Task, script string) TaskState {
 func removeTaskModuleDep(tasks []Task, complete string) {
 	for i := range tasks {
 		resDeps := make([]string, 0)
-		for _, name := range tasks[0].Module.Deps {
+		for _, name := range tasks[i].Module.Deps {
 			if name != complete {
 				resDeps = append(resDeps, name)
 			}
@@ -205,6 +205,7 @@ func (receiver Program) filterModuleByFilter(modules []Module, filters []string)
 
 func (receiver Program) Run(options Options) {
 	modules := calcModulesDep(receiver.filterModuleByFilter(filterModuleByScript(receiver.scanModules(), options.Script), options.Filter))
+	fmt.Printf("扫描到 %d 个模块\n", len(modules))
 	var tasks = make([]Task, len(modules))
 	for i, module := range modules {
 		tasks[i] = Task{
