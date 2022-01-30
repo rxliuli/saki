@@ -1,16 +1,17 @@
-import * as os from 'os'
-import json from './package.json'
-import { downloadRelease } from '@terascope/fetch-github-release'
-import * as path from 'path'
-import { extract } from 'tar'
-import { copy } from 'fs-extra'
+const os = require('os')
+const json = require('./package.json')
+const { downloadRelease } = require('@terascope/fetch-github-release')
+const path = require('path')
+const { extract } = require('tar')
+const { copy } = require('fs-extra')
 
 async function main() {
-  const archMap: Record<string, string> = {
+  console.log('hello')
+  const archMap = {
     arm64: 'arm64',
     x64: 'amd64',
   }
-  const platformMap: Record<string, string> = {
+  const platformMap = {
     win32: 'windows',
     linux: 'linux',
     darwin: 'macos',

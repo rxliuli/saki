@@ -26,4 +26,3 @@ dist/
 **/src/**/i18n/index.d.ts
 
 .env
-install.js

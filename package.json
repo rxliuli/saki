@@ -2,15 +2,19 @@
   "name": "@liuli-util/saki",
   "version": "0.2.1",
   "scripts": {
-    "setup": "esno install.ts",
     "pub": "dotenv \"goreleaser release --rm-dist --skip-validate\"",
     "install-local": "go build && go install",
-    "postinstall": "esno install.ts"
+    "postinstall": "node install.js"
   },
   "bin": {
     "saki": "bin"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "files": [
+    "install.js",
     "bin"
   ],
   "devDependencies": {
@@ -23,7 +27,6 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "esno": "^0.14.0",
     "@terascope/fetch-github-release": "^0.8.7",
     "fs-extra": "^10.0.0",
     "tar": "^6.1.11"
