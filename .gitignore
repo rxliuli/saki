@@ -25,5 +25,5 @@ dist/
 *.tsbuildinfo
 **/src/**/i18n/index.d.ts
 
-dist/
 .env
+install.js
