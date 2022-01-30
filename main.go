@@ -4,10 +4,12 @@ import (
 	"errors"
 	"github.com/rxliuli/saki/builder"
 	"github.com/rxliuli/saki/runner"
+	"github.com/rxliuli/saki/utils/array"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/ffmt.v1"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -70,10 +72,14 @@ func main() {
 					if cmd == "" {
 						return errors.New("请输入运行的命令")
 					}
+					filters := array.StringFlatMap(context.StringSlice("filter"), func(s string) []string {
+						return strings.Split(s, ",")
+					})
+					//ffmt.Puts("filters: ", cmd, filters, context.StringSlice("filter"))
 					runner.Program{
 						Cwd: cwd,
 					}.Run(runner.Options{
-						Filter: context.StringSlice("filter"),
+						Filter: filters,
 						Script: cmd,
 					})
 					return nil
