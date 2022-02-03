@@ -3,6 +3,7 @@ package builder
 import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/rxliuli/saki/builder/plugin"
 	"github.com/rxliuli/saki/utils/fsExtra"
 	"github.com/rxliuli/saki/utils/object"
 	"github.com/swaggest/assertjson/json5"
@@ -23,11 +24,12 @@ var (
 )
 
 type PackageJson struct {
-	Name             string            `json:"name"`
-	Dependencies     map[string]string `json:"dependencies"`
-	DevDependencies  map[string]string `json:"devDependencies"`
-	PeerDependencies map[string]string `json:"peerDependencies"`
-	Scripts          map[string]string `json:"scripts"`
+	Name             string             `json:"name"`
+	Dependencies     map[string]string  `json:"dependencies"`
+	DevDependencies  map[string]string  `json:"devDependencies"`
+	PeerDependencies map[string]string  `json:"peerDependencies"`
+	Scripts          map[string]string  `json:"scripts"`
+	Saki             []api.BuildOptions `json:"saki"`
 }
 
 func (receiver Program) getDeps() []string {
@@ -96,10 +98,10 @@ func (receiver Program) getPlugins(platform api.Platform) []api.Plugin {
 	if platform == api.PlatformBrowser {
 	}
 	if platform == api.PlatformNode {
-		plugins = append(plugins, NodeExternals())
+		plugins = append(plugins, plugin.NodeExternals())
 	}
 	if receiver.Watch {
-		plugins = append(plugins, Logger(receiver.Cwd))
+		plugins = append(plugins, plugin.BuildLogger(receiver.Cwd))
 	}
 	return plugins
 }
@@ -135,7 +137,7 @@ func (receiver Program) getEsmOptions() api.BuildOptions {
 	options.EntryPoints = []string{filepath.Join(receiver.Cwd, "src/index.ts")}
 	options.Outfile = filepath.Join(receiver.Cwd, "dist/index.esm.js")
 	options.Format = api.FormatESModule
-	options.Plugins = append(options.Plugins, AutoExternal())
+	options.Plugins = append(options.Plugins, plugin.AutoExternal())
 	return options
 }
 
@@ -144,7 +146,7 @@ func (receiver Program) getCjsOptions() api.BuildOptions {
 	options.EntryPoints = []string{filepath.Join(receiver.Cwd, "src/index.ts")}
 	options.Outfile = filepath.Join(receiver.Cwd, "dist/index.js")
 	options.Format = api.FormatCommonJS
-	options.Plugins = append(options.Plugins, AutoExternal())
+	options.Plugins = append(options.Plugins, plugin.AutoExternal())
 	return options
 }
 

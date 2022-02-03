@@ -84,8 +84,9 @@ func main() {
 				},
 			},
 			{
-				Name:  "run",
-				Usage: "运行命令",
+				Name:   "run",
+				Usage:  "运行命令",
+				Hidden: true,
 				Flags: []cli.Flag{
 					&cli.StringSliceFlag{
 						Name:     "filter",
