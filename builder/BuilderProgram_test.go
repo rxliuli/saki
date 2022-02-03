@@ -74,3 +74,26 @@ func TestProgram_BuildLibWatch(t *testing.T) {
 	assert.NoError(t, builder.BuildToTargets([]Target{TargetEsm, TargetCjs}))
 	<-make(chan bool)
 }
+
+func TestProgram_BuildByConfig(t *testing.T) {
+	beforeEach()
+	_ = fsExtra.WriteJson(filepath.Join(tempPath, "package.json"), map[string]interface{}{
+		"name":    "test",
+		"version": "1.0.0",
+		"dependencies": map[string]interface{}{
+			"lodash": "*",
+		},
+		"saki": []interface{}{
+			api.BuildOptions{
+				EntryPoints: []string{"index.js"},
+				Outfile:     "dist/index.js",
+				Format:      api.FormatESModule,
+				Bundle:      true,
+				Write:       true,
+			},
+		},
+	})
+	_ = fsExtra.WriteStringFile(filepath.Join(tempPath, "index.js"), "export function hello(name) {\n    return `Hello, ${name}!`;\n}")
+	assert.NoError(t, builder.BuildByConfig())
+	assert.True(t, fsExtra.PathExists(filepath.Join(tempPath, "dist/index.js")))
+}

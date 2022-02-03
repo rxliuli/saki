@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"errors"
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/rxliuli/saki/builder/plugin"
@@ -229,4 +230,37 @@ func (receiver Program) BuildToTargets(targets []Target) error {
 		fmt.Printf("构建完成: %s\n", time.Now().Sub(start).String())
 	}
 	return resolveResultError(res)
+}
+
+func (receiver Program) absPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(receiver.Cwd, path)
+}
+
+func (receiver Program) calcOptions(options api.BuildOptions) api.BuildOptions {
+	for i := range options.EntryPoints {
+		options.EntryPoints[i] = receiver.absPath(options.EntryPoints[i])
+	}
+	if options.Outfile != "" {
+		options.Outfile = receiver.absPath(options.Outfile)
+	}
+	options.Write = true
+	return options
+}
+
+func (receiver Program) BuildByConfig() error {
+	var json PackageJson
+	err := fsExtra.ReadJson(filepath.Join(receiver.Cwd, "package.json"), &json)
+	if err != nil {
+		return errors.New("解析 package.json 失败")
+	}
+	for _, options := range json.Saki {
+		result := api.Build(receiver.calcOptions(options))
+		if len(result.Errors) != 0 {
+			return errors.New(result.Errors[0].Text)
+		}
+	}
+	return nil
 }

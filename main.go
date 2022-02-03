@@ -82,6 +82,10 @@ func main() {
 						},
 					},
 				},
+				Action: func(context *cli.Context) error {
+					program.Watch = context.Bool("watch")
+					return program.BuildByConfig()
+				},
 			},
 			{
 				Name:   "run",
