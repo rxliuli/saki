@@ -99,7 +99,7 @@ func (receiver Program) getPlugins(platform api.Platform) []api.Plugin {
 	if platform == api.PlatformBrowser {
 	}
 	if platform == api.PlatformNode {
-		plugins = append(plugins, plugin.NodeExternals())
+		plugins = append(plugins, plugin.NodeExternal())
 	}
 	if receiver.Watch {
 		plugins = append(plugins, plugin.BuildLogger(receiver.Cwd))
