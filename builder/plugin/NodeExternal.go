@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-// NodeExternals 排除和替换 node 内置模块
-func NodeExternals() api.Plugin {
+// NodeExternal 排除和替换 node 内置模块
+func NodeExternal() api.Plugin {
 	return api.Plugin{
-		Name: "esbuild-plugin-node-externals",
+		Name: "esbuild-plugin-node-external",
 		Setup: func(build api.PluginBuild) {
 			build.OnResolve(api.OnResolveOptions{
 				Filter: `^node:`,
