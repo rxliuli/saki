@@ -5,10 +5,12 @@ import (
 	"github.com/rxliuli/saki/utils/jsonext"
 	"github.com/rxliuli/saki/utils/object"
 	"os"
+	"regexp"
 	"strings"
 )
 
 func loadEnv() map[string]string {
+
 	env := map[string]string{}
 	for _, v := range os.Environ() {
 		kv := strings.SplitN(v, "=", 2)
@@ -21,8 +23,14 @@ func loadEnv() map[string]string {
 
 func defineImport(envs map[string]string) map[string]string {
 	definitions := map[string]string{}
+	compile, err := regexp.Compile("^[_$a-zA-Z][$_a-zA-Z0-9]*$")
+	if err != nil {
+		panic(err)
+	}
 	for k, v := range envs {
-		definitions["import.meta.env."+k] = jsonext.Stringify(v)
+		if compile.Match([]byte(k)) {
+			definitions["import.meta.env."+k] = jsonext.Stringify(v)
+		}
 	}
 	return definitions
 }

@@ -117,6 +117,7 @@ func (receiver Program) getBaseOptions() api.BuildOptions {
 	}
 	platform := receiver.getPlatform()
 	return api.BuildOptions{
+		AbsWorkingDir:     receiver.Cwd,
 		Sourcemap:         api.SourceMapExternal,
 		Bundle:            true,
 		Watch:             &watch,
@@ -363,9 +364,18 @@ func (receiver Program) calcOptions(options BuildOptions) api.BuildOptions {
 	if options.Outfile != "" {
 		options.Outfile = receiver.absPath(options.Outfile)
 	}
+	var watch api.WatchMode
+	if receiver.Watch {
+		watch = api.WatchMode{}
+	}
 	baseOptions := api.BuildOptions{
-		Write:  true,
-		Bundle: true,
+		Write:         true,
+		Bundle:        true,
+		AbsWorkingDir: receiver.Cwd,
+		Watch:         &watch,
+	}
+	if receiver.Watch {
+		baseOptions.Plugins = append(baseOptions.Plugins, plugin.Logger())
 	}
 	baseOptions.EntryPoints = options.EntryPoints
 	baseOptions.Outfile = options.Outfile
@@ -379,31 +389,44 @@ func (receiver Program) calcOptions(options BuildOptions) api.BuildOptions {
 	}
 	baseOptions.External = options.External
 	baseOptions.Bundle = options.Bundle
-	baseOptions.Plugins = convertPlugins(options.Plugins)
+	baseOptions.Plugins = append(baseOptions.Plugins, convertPlugins(options.Plugins)...)
 	return baseOptions
 }
 
-func loadConfig(cwd string) []BuildOptions {
+func loadConfig(cwd string) (error, []BuildOptions) {
 	var json struct {
 		Saki []BuildOptions `json:"saki"`
 	}
 	err := fsExtra.ReadJson(filepath.Join(cwd, "package.json"), &json)
 	if err != nil {
-		panic(errors.New("解析 package.json 失败"))
+		return errors.New("解析 package.json 失败"), nil
 	}
-	return json.Saki
+	if json.Saki == nil {
+		return errors.New("没有找到 saki 字段配置项"), nil
+	}
+	return nil, json.Saki
 }
 
 func (receiver Program) buildByConfig(options []BuildOptions) error {
+	start := time.Now()
 	for _, options := range options {
 		result := api.Build(receiver.calcOptions(options))
 		if len(result.Errors) != 0 {
 			return errors.New(result.Errors[0].Text)
 		}
 	}
+	if receiver.Watch {
+		<-make(chan bool)
+	} else {
+		fmt.Printf("构建完成: %s\n", time.Now().Sub(start).String())
+	}
 	return nil
 }
 
 func (receiver Program) BuildByConfig() error {
-	return receiver.buildByConfig(loadConfig(receiver.Cwd))
+	err, configs := loadConfig(receiver.Cwd)
+	if err != nil {
+		return err
+	}
+	return receiver.buildByConfig(configs)
 }

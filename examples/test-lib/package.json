@@ -1,0 +1,17 @@
+{
+  "name": "test-lib",
+  "private": true,
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "saki build lib",
+    "dev": "saki build -w lib"
+  },
+  "devDependencies": {
+    "typescript": "^4.4.3"
+  },
+  "sync": []
+}

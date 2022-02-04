@@ -1,0 +1,41 @@
+{
+  "name": "test-custom-bundle-lib",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "dotenv -e .env.production saki build",
+    "dev": "dotenv -e .env.production \"saki build -w\""
+  },
+  "saki": [
+    {
+      "entryPoints": [
+        "src/main.ts"
+      ],
+      "outfile": "dist/bundle.mjs",
+      "format": "esm",
+      "sourcemap": "external",
+      "plugins": {
+        "env": null,
+        "raw": null
+      },
+      "bundle": true
+    },
+    {
+      "entryPoints": [
+        "src/main.ts"
+      ],
+      "outfile": "dist/bundle.cjs",
+      "format": "cjs",
+      "sourcemap": "external",
+      "plugins": {
+        "env": null,
+        "raw": null
+      },
+      "bundle": true
+    }
+  ],
+  "devDependencies": {
+    "typescript": "^4.4.3",
+    "@types/node": "^16.11.22",
+    "dotenv-cli": "^4.1.1"
+  }
+}

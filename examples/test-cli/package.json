@@ -1,0 +1,35 @@
+{
+  "name": "test-cli",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "saki build cli",
+    "dev": "saki build cli -w",
+    "start": "esno src/bin.ts"
+  },
+  "bin": {
+    "test-cli": "./bin.js"
+  },
+  "dependencies": {
+    "commander": "^8.2.0",
+    "enquirer": "^2.3.6",
+    "fs-extra": "^10.0.0"
+  },
+  "devDependencies": {
+    "@liuli-util/cli": "^3.18.0",
+    "@types/fs-extra": "^9.0.13",
+    "@types/jest": "^27.0.2",
+    "@types/lodash": "^4.14.173",
+    "@types/node": "^16.9.6",
+    "esno": "^0.9.1",
+    "jest": "^27.2.1",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^27.0.5",
+    "type-fest": "^2.3.4",
+    "typescript": "^4.4.3"
+  },
+  "sync": []
+}

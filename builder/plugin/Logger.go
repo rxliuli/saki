@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -17,7 +18,7 @@ func Logger() api.Plugin {
 				return api.OnStartResult{}, nil
 			})
 			build.OnEnd(func(result *api.BuildResult) {
-				rel := build.InitialOptions.Outfile
+				rel, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, build.InitialOptions.Outfile)
 				if len(result.Errors) != 0 {
 					message := result.Errors[0]
 					location := message.Location

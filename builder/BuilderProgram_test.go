@@ -101,6 +101,8 @@ export function hello() {
   console.log(uniqBy([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
 }
 `)
-	assert.NoError(t, builder.buildByConfig(loadConfig(tempPath)))
+	err, configs := loadConfig(tempPath)
+	assert.NoError(t, err)
+	assert.NoError(t, builder.buildByConfig(configs))
 	assert.True(t, fsExtra.PathExists(filepath.Join(tempPath, "dist/index.js")))
 }
