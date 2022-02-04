@@ -27,34 +27,23 @@ func defineImport(envs map[string]string) map[string]string {
 	return definitions
 }
 
-func defineProcess(envs map[string]string) map[string]string {
-	definitions := map[string]string{}
-	for k, v := range envs {
-		definitions["process.env."+k] = jsonext.Stringify(v)
-	}
-	return definitions
-}
-
-type EnvOptions struct {
-	Process bool `json:"process"`
-	Import  bool `json:"import"`
-}
+//func defineProcess(envs map[string]string) map[string]string {
+//	definitions := map[string]string{}
+//	for k, v := range envs {
+//		definitions["process.env."+k] = jsonext.Stringify(v)
+//	}
+//	return definitions
+//}
 
 // Env 环境变量插件
-func Env(options EnvOptions) api.Plugin {
+func Env() api.Plugin {
 	return api.Plugin{
 		Name: "esbuild-plugin-env",
 		Setup: func(build api.PluginBuild) {
 			if build.InitialOptions.Define == nil {
 				build.InitialOptions.Define = map[string]string{}
 			}
-			envs := loadEnv()
-			if options.Import {
-				build.InitialOptions.Define = object.Assign(build.InitialOptions.Define, defineImport(envs))
-			}
-			if options.Process {
-				build.InitialOptions.Define = object.Assign(build.InitialOptions.Define, defineProcess(envs))
-			}
+			build.InitialOptions.Define = object.Assign(build.InitialOptions.Define, defineImport(loadEnv()))
 		},
 	}
 }

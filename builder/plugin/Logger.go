@@ -3,14 +3,13 @@ package plugin
 import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
-	"path/filepath"
 	"strings"
 	"time"
 )
 
-func BuildLogger(cwd string) api.Plugin {
+func Logger() api.Plugin {
 	return api.Plugin{
-		Name: "esbuild-plugin-build-logger",
+		Name: "esbuild-plugin-logger",
 		Setup: func(build api.PluginBuild) {
 			start := time.Now()
 			build.OnStart(func() (api.OnStartResult, error) {
@@ -18,7 +17,7 @@ func BuildLogger(cwd string) api.Plugin {
 				return api.OnStartResult{}, nil
 			})
 			build.OnEnd(func(result *api.BuildResult) {
-				rel, _ := filepath.Rel(cwd, build.InitialOptions.Outfile)
+				rel := build.InitialOptions.Outfile
 				if len(result.Errors) != 0 {
 					message := result.Errors[0]
 					location := message.Location

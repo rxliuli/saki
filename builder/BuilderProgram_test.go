@@ -84,16 +84,23 @@ func TestProgram_BuildByConfig(t *testing.T) {
 			"lodash": "*",
 		},
 		"saki": []interface{}{
-			api.BuildOptions{
+			BuildOptions{
 				EntryPoints: []string{"index.js"},
 				Outfile:     "dist/index.js",
-				Format:      api.FormatESModule,
-				Bundle:      true,
-				Write:       true,
+				Format:      FormatESModule,
+				Plugins: map[PluginName]interface{}{
+					PluginLogger:       nil,
+					PluginAutoExternal: nil,
+				},
 			},
 		},
 	})
-	_ = fsExtra.WriteStringFile(filepath.Join(tempPath, "index.js"), "export function hello(name) {\n    return `Hello, ${name}!`;\n}")
-	assert.NoError(t, builder.BuildByConfig())
+	_ = fsExtra.WriteStringFile(filepath.Join(tempPath, "index.js"), `import { uniqBy } from "lodash";
+
+export function hello() {
+  console.log(uniqBy([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+}
+`)
+	assert.NoError(t, builder.buildByConfig(loadConfig(tempPath)))
 	assert.True(t, fsExtra.PathExists(filepath.Join(tempPath, "dist/index.js")))
 }

@@ -25,12 +25,11 @@ var (
 )
 
 type PackageJson struct {
-	Name             string             `json:"name"`
-	Dependencies     map[string]string  `json:"dependencies"`
-	DevDependencies  map[string]string  `json:"devDependencies"`
-	PeerDependencies map[string]string  `json:"peerDependencies"`
-	Scripts          map[string]string  `json:"scripts"`
-	Saki             []api.BuildOptions `json:"saki"`
+	Name             string            `json:"name"`
+	Dependencies     map[string]string `json:"dependencies"`
+	DevDependencies  map[string]string `json:"devDependencies"`
+	PeerDependencies map[string]string `json:"peerDependencies"`
+	Scripts          map[string]string `json:"scripts"`
 }
 
 func (receiver Program) getDeps() []string {
@@ -102,7 +101,7 @@ func (receiver Program) getPlugins(platform api.Platform) []api.Plugin {
 		plugins = append(plugins, plugin.NodeExternal())
 	}
 	if receiver.Watch {
-		plugins = append(plugins, plugin.BuildLogger(receiver.Cwd))
+		plugins = append(plugins, plugin.Logger())
 	}
 	return plugins
 }
@@ -239,28 +238,172 @@ func (receiver Program) absPath(path string) string {
 	return filepath.Join(receiver.Cwd, path)
 }
 
-func (receiver Program) calcOptions(options api.BuildOptions) api.BuildOptions {
+type SourceMap string
+
+//goland:noinspection GoUnusedConst
+const (
+	SourceMapNone              SourceMap = "none"
+	SourceMapInline            SourceMap = "inline"
+	SourceMapLinked            SourceMap = "linked"
+	SourceMapExternal          SourceMap = "external"
+	SourceMapInlineAndExternal SourceMap = "inlineAndExternal"
+)
+
+type Platform string
+
+//goland:noinspection GoUnusedConst
+const (
+	PlatformBrowser Platform = "browser"
+	PlatformNode    Platform = "node"
+	PlatformNeutral Platform = "neutral"
+)
+
+type Format string
+
+//goland:noinspection GoUnusedConst
+const (
+	FormatDefault  Format = "default"
+	FormatIIFE     Format = "iife"
+	FormatCommonJS Format = "cjs"
+	FormatESModule Format = "esm"
+)
+
+type PluginName string
+
+const (
+	PluginAutoExternal PluginName = "auto-external" // 自动排除所有依赖
+	PluginLogger       PluginName = "logger"        // 打印构建日志
+	PluginEnv          PluginName = "env"           // 替换环境变量，支持 import.meta.env 和 process.env
+	PluginNodeExternal PluginName = "node-external" // 排除 node:* 原生模块
+	PluginRaw          PluginName = "raw"           // 支持引入文本文件
+)
+
+// BuildOptions 支持 esbuild 构建选项的子集
+type BuildOptions struct {
+	EntryPoints []string                   `json:"entryPoints"`
+	Outfile     string                     `json:"outfile"`
+	Platform    Platform                   `json:"platform"`
+	Format      Format                     `json:"format"`
+	Sourcemap   SourceMap                  `json:"sourcemap"`
+	Minify      bool                       `json:"minify"`
+	External    []string                   `json:"external"`
+	Bundle      bool                       `json:"bundle"`
+	Plugins     map[PluginName]interface{} `json:"plugins"` // 插件配置，插件名 => 配置的 Map
+}
+
+func convertSourceMap(sourceMap SourceMap) api.SourceMap {
+	switch sourceMap {
+	case SourceMapInline:
+		return api.SourceMapInline
+	case SourceMapLinked:
+		return api.SourceMapLinked
+	case SourceMapExternal:
+		return api.SourceMapExternal
+	case SourceMapInlineAndExternal:
+		return api.SourceMapInlineAndExternal
+	default:
+		return api.SourceMapNone
+	}
+}
+
+func convertPlatform(platform Platform) api.Platform {
+	switch platform {
+	case PlatformBrowser:
+		return api.PlatformBrowser
+	case PlatformNode:
+		return api.PlatformNode
+	default:
+		return api.PlatformNeutral
+	}
+}
+
+func convertFormat(format Format) api.Format {
+	switch format {
+	case FormatIIFE:
+		return api.FormatIIFE
+	case FormatCommonJS:
+		return api.FormatCommonJS
+	case FormatESModule:
+		return api.FormatESModule
+	default:
+		return api.FormatDefault
+	}
+}
+
+func convertPlugin(name PluginName) api.Plugin {
+	switch name {
+	case PluginAutoExternal:
+		return plugin.AutoExternal()
+	case PluginLogger:
+		return plugin.Logger()
+	case PluginEnv:
+		return plugin.Env()
+	case PluginNodeExternal:
+		return plugin.NodeExternal()
+	case PluginRaw:
+		return plugin.Raw()
+	default:
+		panic("无法识别的插件")
+	}
+}
+
+func convertPlugins(plugins map[PluginName]interface{}) []api.Plugin {
+	res := make([]api.Plugin, 0)
+	for k := range plugins {
+		res = append(res, convertPlugin(k))
+	}
+	return res
+}
+
+//计算 esbuild 构建选项
+func (receiver Program) calcOptions(options BuildOptions) api.BuildOptions {
 	for i := range options.EntryPoints {
 		options.EntryPoints[i] = receiver.absPath(options.EntryPoints[i])
 	}
 	if options.Outfile != "" {
 		options.Outfile = receiver.absPath(options.Outfile)
 	}
-	options.Write = true
-	return options
+	baseOptions := api.BuildOptions{
+		Write:  true,
+		Bundle: true,
+	}
+	baseOptions.EntryPoints = options.EntryPoints
+	baseOptions.Outfile = options.Outfile
+	baseOptions.Platform = convertPlatform(options.Platform)
+	baseOptions.Format = convertFormat(options.Format)
+	baseOptions.Sourcemap = convertSourceMap(options.Sourcemap)
+	if options.Minify {
+		baseOptions.MinifyWhitespace = true
+		baseOptions.MinifySyntax = true
+		baseOptions.MinifyIdentifiers = true
+	}
+	baseOptions.External = options.External
+	baseOptions.Bundle = options.Bundle
+	baseOptions.Plugins = convertPlugins(options.Plugins)
+	return baseOptions
 }
 
-func (receiver Program) BuildByConfig() error {
-	var json PackageJson
-	err := fsExtra.ReadJson(filepath.Join(receiver.Cwd, "package.json"), &json)
-	if err != nil {
-		return errors.New("解析 package.json 失败")
+func loadConfig(cwd string) []BuildOptions {
+	var json struct {
+		Saki []BuildOptions `json:"saki"`
 	}
-	for _, options := range json.Saki {
+	err := fsExtra.ReadJson(filepath.Join(cwd, "package.json"), &json)
+	if err != nil {
+		panic(errors.New("解析 package.json 失败"))
+	}
+	return json.Saki
+}
+
+func (receiver Program) buildByConfig(options []BuildOptions) error {
+	for _, options := range options {
 		result := api.Build(receiver.calcOptions(options))
 		if len(result.Errors) != 0 {
 			return errors.New(result.Errors[0].Text)
 		}
 	}
 	return nil
+}
+
+func (receiver Program) BuildByConfig() error {
+	return receiver.buildByConfig(loadConfig(receiver.Cwd))
 }
