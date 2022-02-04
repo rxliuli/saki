@@ -1,35 +1,14 @@
 {
-  "name": "@liuli-util/saki",
-  "version": "0.2.7",
+  "name": "saki",
+  "private": true,
   "scripts": {
     "pub": "dotenv \"goreleaser release --rm-dist --skip-validate\"",
-    "install-local": "go build && go install",
-    "postinstall": "node install.js"
+    "install-local": "go build && go install"
   },
-  "bin": {
-    "saki": "bin"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
-  "files": [
-    "install.js",
-    "bin"
-  ],
   "devDependencies": {
     "@liuli-util/prettier-standard-config": "^0.1.0",
-    "@types/fs-extra": "^9.0.13",
-    "@types/node": "^17.0.13",
-    "@types/tar": "^6.1.1",
     "dotenv-cli": "^4.1.1",
-    "prettier": "^2.3.2",
-    "typescript": "^4.5.5"
-  },
-  "dependencies": {
-    "@terascope/fetch-github-release": "^0.8.7",
-    "fs-extra": "^10.0.0",
-    "tar": "^6.1.11"
+    "prettier": "^2.3.2"
   },
   "sync": [
     "prettier"

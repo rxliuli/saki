@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-//go:embed package.json
+//go:embed npm/package.json
 var packageJson embed.FS
 
 type PackageJson struct {
@@ -21,7 +21,7 @@ type PackageJson struct {
 }
 
 func readVersion() string {
-	file, _ := packageJson.ReadFile("package.json")
+	file, _ := packageJson.ReadFile("npm/package.json")
 	var pkgJson PackageJson
 	_ = json.Unmarshal(file, &pkgJson)
 	return pkgJson.Version

@@ -1,5 +1,5 @@
 const os = require('os')
-const json = require('./package.json')
+const json = require('../package.json')
 const { downloadRelease } = require('@terascope/fetch-github-release')
 const path = require('path')
 const { extract } = require('tar')
